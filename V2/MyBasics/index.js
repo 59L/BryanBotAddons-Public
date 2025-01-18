@@ -1,18 +1,20 @@
 import { Command } from "../../../src/Modules/Structures/Handlers/Commands.js";
 import { Addon } from "../../../src/Modules/Structures/Handlers/Addons.js";
 import Utils from "../../../src/Modules/Utils.js";
-import chalk from "chalk";
+const { logger } = Utils;
 
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
+// Fetch local directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const commandsDir = path.resolve(__dirname, "./Commands");
 
 // Define the addon and its configuration
-const addon = new Addon("MyBasics", "v1.1.1");
+const addon = new Addon("MyBasics", "v1.0");
+// Basic Command Config which stores all data about commands which people can enable and disable.
 const addonConfig = {
   commands: {
     Ping: {
@@ -32,32 +34,39 @@ const addonConfig = {
 /** @type {addonConfig} */
 const { commands } = addon.customConfig(addonConfig);
 
-// Set up the addon's logging
-addon.setLog(`bold{BasicUtils} has been loaded! Version: bold{v1.0}`);
+// Set up the addon's logging using the built in chalk system
+// Automatically replace colors of chalk without calling the chalk variable. You can also use Utils.logger.<debug, info, warn, error, addon>
+addon.setLog(`prefix{cyan{MyBasics}} has been loaded! Version: bold{v1.0}`);
 
 // Define the addon's execution logic
+// Manager is the entire BryanBot instance. More information can be found on the docs
 addon.setExecute(async (manager) => {
+  // Saving start time for command load time. Mehh
   const start = Date.now()
+
   fs.readdir(commandsDir, (err, files) => {
     if (err) {
-      console.error(`Error reading commands directory: ${err.message}`);
+      logger.error(`prefix{MyBasics} Error reading commands directory: red{${err.message}}`);
       return;
     }
 
-
     files
-      .filter((file) => file.endsWith(".js")) // Process only .js files
+      .filter((file) => file.endsWith(".js")) // Only read js files assuming its a proper cmd
       .forEach(async (file) => {
         try {
+          // Import the exported module from the command file.
           const { default: commandModule } = await import(`file://` + path.join(commandsDir, file));
 
+          // Get commandName which is used to fetch command data from config
+          // Check if command and configCommand exists
           const { name: CommandName, LegacyRun, InteractionRun } = commandModule;
           const configCommandName = CommandName ? Object.keys(commands).find(c => c.toLowerCase() === CommandName) : undefined
           if (!CommandName || !configCommandName) {
-            console.warn(`No valid commandName or config found for ${file}. Skipping...`);
+            logger.warn(`prefix{MyBasics} No valid commandName or config found for ${file}. Skipping...`);
             return;
           }
 
+          // create new command using fetched command data
           const commandData = commands[configCommandName]
           new Command({
             commandData,
@@ -85,9 +94,10 @@ addon.setExecute(async (manager) => {
             },
           });
 
-          Utils.logger.addon(`green{[cyan{MyBasics}]} loaded the command greenBright{${CommandName}} in ${Math.floor(Date.now() - start) / 1000} second(s).`)
+          // Finish Command Init
+          return logger.addon(`prefix{cyan{MyBasics}} loaded the command greenBright{${CommandName}} in ${Math.floor(Date.now() - start) / 1000} second(s).`)
         } catch (err) {
-          console.error(`Error loading command file ${file}: ${err.message}`);
+          logger.error(`prefix{MyBasics} Error loading command file red{${file}}: red{${err.message}}`);
         }
       })
   })
