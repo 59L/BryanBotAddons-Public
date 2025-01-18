@@ -38,6 +38,12 @@ const { commands } = addon.customConfig(addonConfig);
 // Automatically replace colors of chalk without calling the chalk variable. You can also use Utils.logger.<debug, info, warn, error, addon>
 addon.setLog(`prefix{cyan{MyBasics}} has been loaded! Version: bold{v1.0}`);
 
+// Declare the developer information according to the addon
+addon.setDeveloper("59L") // Declare addon developer (required)
+  .setDiscord("https://59l.dev/discord") // Discord to join for support (optional)
+  .setDocs("https://59l.dev/docs/mybasics") // Documentation for addon (optional)
+  .setAdditional("Thank you for downloading my addon template!\nPlease use me to create many addons for you and your friends!") // Random option to put information for a future addon list cmd to (optional)
+
 // Define the addon's execution logic
 // Manager is the entire BryanBot instance. More information can be found on the docs
 addon.setExecute(async (manager) => {
